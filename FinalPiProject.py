@@ -1,4 +1,4 @@
-# Names: John Coughlin, Seth Flowers 1
+# Names: John Coughlin, Seth Flowers 
 
 # Final Pi Project
 
