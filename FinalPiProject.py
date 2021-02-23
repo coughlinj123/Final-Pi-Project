@@ -6,6 +6,8 @@
 
 
 from tkinter import *
+import RPi.GPIO as GPIO
+from time import time
 
 class GUI(Frame):
     def __init__(self, master):
@@ -76,6 +78,10 @@ class GUI(Frame):
     def process(self, buttonNumber):
         global currentScreen
         global flags
+        global CurrentTime
+        CurrentTime = time()
+        if(CurrentTime-Start > Stop):
+            TimesUp()
         if(self.ButtonCommand[buttonNumber][0] == None):
             pass
         #"go", area
@@ -156,6 +162,8 @@ class GUI(Frame):
                     self.ButtonCommand[buttonNumber][4].Area = currentScreen
                     currentScreen = self.ButtonCommand[buttonNumber][4]
                     self.update()
+        elif(self.ButtonCommand[buttonNumber][0] == "function"):
+            self.ButtonCommand[buttonNumber][1]()
         elif(self.ButtonCommand[buttonNumber][0] == "return" and str(currentScreen) == "Event"):
             currentScreen = currentScreen.Area
             self.update()
@@ -246,7 +254,7 @@ def Setup():
     Area10.setText(["You find yourself in another office.", "What do you do?", "Look around", "Leave the area", "", "", ""])
     Area11.setText(["You find yourself in what looks like a office with a door on each side.", "What do you do?", "Look around", "Leave the area", "", "", ""])
     Area12.setText(["You find yourself in another office.", "What do you do?", "Look around", "Leave the area", "", "", ""])
-    Area13.setText(["Area 13 description", "Area 13 choices:", "Look around", "Leave the area", "", "", ""])
+    Area13.setText(["You see a big bomb in the middle of the room.", "What do you do?", "Defuse bomb", "", "", "", ""])
 
     #Creating all flags:
 
@@ -313,8 +321,10 @@ def Setup():
     FinalPuzzle3 = Event()
     FinalPuzzle3Pass = Event()
 
-    Area13Look = Event()
-    Area13Leave = Event()
+    Area13Bomb
+
+    global GoodEnd
+    global BadEnd
     GoodEnd = Event()
     BadEnd = Event()
 
@@ -373,9 +383,7 @@ def Setup():
     Area12Leave.setText(["There is only one door you can go through", "You can leave through:", "Go through the door", "", "", "", "Go back"])
     FinalPuzzle3.setText(["Opening the laptop you see a sticky note attached to it.  On it is a password", "What do you do?", "Enter the password", "", "", "", "go back"])
     FinalPuzzle3Pass.setText(["You enter in the password.  Once you've done this the laptop shuts down.  You can't turn it back on.", "...", "Okay", "", "", "", ""])
-
-    Area13Look.setText(["Looking around Area 13", "You find:", "", "", "", "", "Go back"])
-    Area13Leave.setText(["Text description of exits", "You can leave through:", "", "", "", "", "Go back"])
+    
     BadEnd.setText(["Bad ending.", "", "", "", "", "", ""])
     GoodEnd.setText(["Good ending.", "", "", "", "", "", ""])
 
@@ -394,7 +402,7 @@ def Setup():
     Area10.setCommand([["event", Area10Look], ["event", Area10Leave], [None], [None], [None]])
     Area11.setCommand([["event", Area11Look], ["event", Area11Leave], [None], [None], [None]])
     Area12.setCommand([["event", Area12Look], ["event", Area12Leave], [None], [None], [None]])
-    Area13.setCommand([["event", Area13Look], ["event", Area13Leave], [None], [None], [None]])
+    Area13.setCommand([["function", Bomb], [None], [None], [None], [None]])
 
     #setting all the button commands for all the events:
 
@@ -455,18 +463,6 @@ def Setup():
     Area13Look.setCommand([[None],[None],[None],[None],["return"]])
     Area13Leave.setCommand([[None],[None],[None],[None],["return"]])
 
-    #Chase scene:
-
-
-
-    #Timed Events:
-
-
-    #Side Quests:
-
-    #Main.addSideQuest()
-
-
 
 
     global currentScreen
@@ -480,11 +476,87 @@ def Setup():
     
     #pass
 
+def Bomb():
+    global CurrentTime
+    global GameWindow
+    global GoodEnd
+    global BadEnd
+    global flags
+    while(True):
+        #TimesUp
+        CurrentTime = time()
+        if(CurrentTime - Start > Stop):
+            TimesUp()
+        
+        #Buttons
+        if(GPIO.input(button1) == GPIO.HIGH):
+            led2state = (GPIO.HIGH * (led2state == GPIO.LOW)) + (GPIO.LOW * (led2state == GPIO.HIGH))
+        elif(GPIO.input(button2) == GPIO.HIGH):
+            led1state = (GPIO.HIGH * (led1state == GPIO.LOW)) + (GPIO.LOW * (led1state == GPIO.HIGH))
+            led3state = (GPIO.HIGH * (led3state == GPIO.LOW)) + (GPIO.LOW * (led3state == GPIO.HIGH))
+        elif(GPIO.input(button3) == GPIO.HIGH):
+            led2state = (GPIO.HIGH * (led2state == GPIO.LOW)) + (GPIO.LOW * (led2state == GPIO.HIGH))
+            led4state = (GPIO.HIGH * (led4state == GPIO.LOW)) + (GPIO.LOW * (led4state == GPIO.HIGH))
+        elif(GPIO.input(button4) == GPIO.HIGH):
+            led3state = (GPIO.HIGH * (led3state == GPIO.LOW)) + (GPIO.LOW * (led3state == GPIO.HIGH))
 
+        #LEDs
+        GPIO.output(led1, led1state)
+        GPIO.output(led2, led2state)
+        GPIO.output(led3, led3state)
+        GPIO.output(led4, led4state)
 
+        #Disarm
+        if(led1state == GPIO.LOW and led2state == GPIO.LOW and led3state == GPIO.LOW and led4state == GPIO.LOW):
+            if(flags["Computers"] == [1, 2, 3]):
+                currentScreen = GoodEnd
+                GameWindow.update()
+                break
+            else:
+                currentScreen = BadEnd
+                GameWindow.update()
+                break
+
+def TimesUp():
+    global currentScreen
+    global GameWindow
+    global BadEnd
+    currentScreen = BadEnd
+    GameWindow.update()
+
+#setting up GPIO
+
+#led1 = 
+#led2 = 
+#led3 = 
+#led4 = 
+#led1state = GPIO.HIGH
+#led2state = GPIO.HIGH
+#led3state = GPIO.LOW
+#led4state = GPIO.HIGH
+#button1 = 
+#button2 = 
+#button3 = 
+#button4 = 
+
+#GPIO.setmode(GPIO.BCM)
+#GPIO.setup(led1, GPIO.OUT)
+#GPIO.setup(led2, GPIO.OUT)
+#GPIO.setup(led3, GPIO.OUT)
+#GPIO.setup(led4, GPIO.OUT)
+#GPIO.setup(button1, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+#GPIO.setup(button2, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+#GPIO.setup(button3, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+#GPIO.setup(button4, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
 
 #Main part of the code:
 
 currentScreen = None
 flags = {}
+Start = time()
+Stop = 300
+CurrentTime = time()
+GameWindow = None
+BadEnd = None
+GoodEnd = None
 Setup()
